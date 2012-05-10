@@ -26,35 +26,20 @@ import gtk
 import gtk.gdk as gdk
 import os.path as path
 
-from threading import Lock
 from numpy import zeros, array, rollaxis, dstack, uint8
 from pprint import pprint
 
 #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-class Mutex(object):
-    def __init__(self, widget):
-        self.lock = Lock()
-    def __enter__(self):
-        self.lock.acquire()
-        return self
-    def __exit__( self, exc_type, exc_val, exc_tb ):
-        self.lock.release()
-
-class Hidden(object):
-    def __init__(self, window):
-        self.window = window
-    def __enter__(self):
-        self.window.hide()
-        (self.x, self.y) = self.xy = self.window.get_position()
-        gdk.flush()   # Hide doesn't occur until flush.
-        return self
-    def __exit__( self, exc_type, exc_val, exc_tb ):
-        self.window.show()
-        self.window.move(*self.xy)
-        gdk.flush()   # Show doesn't occur until flush.
-
 class RGB(object):
+    """
+    RGB enables manipulating normalized ndarrays between
+    image acquisition and image display.
+    """
+
     def __init__(self, source):
+        """
+        Initialize the normalized RGB environment from a pixbuf.
+        """
         self.space = source.get_colorspace()
         self.bits  = source.get_bits_per_sample()
         self.source = rollaxis(
@@ -62,31 +47,38 @@ class RGB(object):
         self.target = zeros(self.source.shape, dtype=float)
 
     @property
-    def Rsource(self):
-        return self.source[0,:,:]
+    def r_source(self):
+        """The normalize R source array."""
+        return self.source[0, :, :]
 
     @property
-    def Gsource(self):
-        return self.source[1,:,:]
+    def g_source(self):
+        """The normalize G source array."""
+        return self.source[1, :, :]
 
     @property
-    def Bsource(self):
-        return self.source[2,:,:]
+    def b_source(self):
+        """The normalize B source array."""
+        return self.source[2, :, :]
 
     @property
-    def Rtarget(self):
-        return self.target[0,:,:]
+    def r_target(self):
+        """The normalize R target array."""
+        return self.target[0, :, :]
 
     @property
-    def Gtarget(self):
-        return self.target[1,:,:]
+    def g_target(self):
+        """The normalize G target array."""
+        return self.target[1, :, :]
 
     @property
-    def Btarget(self):
-        return self.target[2,:,:]
+    def b_target(self):
+        """The normalize B target array."""
+        return self.target[2, :, :]
 
     @property
     def pixbuf(self):
+        """The restored pixbuf after the transform (if any)."""
         return gdk.pixbuf_new_from_array(
                 array(dstack(self.target)*256.0, dtype=uint8),
                 self.space, self.bits)
@@ -242,13 +234,17 @@ class Zoom(object):
         self.cairo.paint()
 
     def follow(self):
+        """Window mouse following function"""
         self.gtkmain.move(self.x_ptr, self.y_ptr)
 
     def background(self):
+        """Paint window when mouse moves window."""
         self.cairo.set_operator(cairo.OPERATOR_SOURCE)
 
-        self.x_ctr = min(max(self.x_ptr - self.x_max/2, 0),self.x_top-self.x_max-1)
-        self.y_ctr = min(max(self.y_ptr - self.y_max/2, 0),self.y_top-self.y_max-1)
+        self.x_ctr = min(
+                max(self.x_ptr - self.x_max/2, 0),self.x_top-self.x_max-1)
+        self.y_ctr = min(
+                max(self.y_ptr - self.y_max/2, 0),self.y_top-self.y_max-1)
 
         pixbuf = gdk.Pixbuf(
                 gdk.COLORSPACE_RGB,
@@ -398,15 +394,15 @@ class Zoom(object):
 
     def original(self, rgb):
         """Leave image intact"""
-        rgb.Rtarget[:,:] = rgb.Rsource[:,:]
-        rgb.Gtarget[:,:] = rgb.Gsource[:,:]
-        rgb.Btarget[:,:] = rgb.Bsource[:,:]
+        rgb.r_target[:, :] = rgb.r_source[:, :]
+        rgb.g_target[:, :] = rgb.g_source[:, :]
+        rgb.b_target[:, :] = rgb.b_source[:, :]
 
     def invert(self, rgb):
         """Invert the image colors (1.0-source)"""
-        rgb.Rtarget[:,:] = 1.0-rgb.Rsource[:,:]
-        rgb.Gtarget[:,:] = 1.0-rgb.Gsource[:,:]
-        rgb.Btarget[:,:] = 1.0-rgb.Bsource[:,:]
+        rgb.r_target[:, :] = 1.0-rgb.r_source[:, :]
+        rgb.g_target[:, :] = 1.0-rgb.g_source[:, :]
+        rgb.b_target[:, :] = 1.0-rgb.b_source[:, :]
 
     def operate(self, fun):
         """Run filter on normalized color planes."""
@@ -424,8 +420,9 @@ class Zoom(object):
 
 #CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 if __name__ == "__main__":
-    def constrain(lo, val, hi):
-        assert lo <= val <= hi
+    def constrain(low, value, high):
+        """Check that a value is within a specified range."""
+        assert low <= value <= high
 
     from optparse import OptionParser
 
