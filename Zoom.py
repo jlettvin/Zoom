@@ -2,11 +2,19 @@
 
 """
 Zoom.py implements a configurable desktop magnifying glass.
-Author: Jonathan D. Lettvin (jlettvin aTsine gmail ... com)
-Date:   20120508
-
-Zoom.py is 
 """
+
+__module__     = "Zoom.py"
+__author__     = "Jonathan D. Lettvin"
+__copyright__  = "Copyright(c)2012 Jonathan D. Lettvin, All Rights Reserved"
+__credits__    = [ "Jonathan D. Lettvin" ]
+__license__    = "Unknown"
+__version__    = "0.0.1"
+__maintainer__ = "Jonathan D. Lettvin"
+__email__      = "jlettvin@gmail.com"
+__contact__    = "jlettvin@gmail.com"
+__status__     = "Prototype"
+__date__       = "20120508"
 
 import pygtk
 pygtk.require('2.0')
